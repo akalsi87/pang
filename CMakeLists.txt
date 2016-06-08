@@ -17,6 +17,9 @@ set(INCLUDE_TEST_IN_BIN FALSE)
 # -- Set project name
 project(pang)
 
+set(USE_CPP TRUE)
+set(USE_CPP11 TRUE)
+
 # -- Include the magic ProjTools
 include("cmake/ProjTools.cmake")
 
@@ -27,3 +30,5 @@ set(PROJ_SUBDIRS  unittest; doc; tools; test)
 foreach(subdir ${PROJ_SUBDIRS})
   add_subdirectory(${subdir})
 endforeach(subdir)
+
+include("pang.cmake")
