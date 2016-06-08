@@ -9,4 +9,17 @@
 #include <cstdint>
 #include <cstddef>
 
+namespace pang {
+
+    class NonCopyable
+    {
+      public:
+        NonCopyable() = default;
+        ~NonCopyable() = default;
+        NonCopyable(const NonCopyable&) = delete;
+        NonCopyable& operator=(const NonCopyable&) = delete;
+    };
+
+}//namespace pang
+
 #endif/*PANG_TYPES_HPP*/

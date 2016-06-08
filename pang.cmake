@@ -12,23 +12,21 @@ set(pang_lib_compat_ver
 
 # -- Headers
 
-# exports
-set(pang_hdr
-    include/pang/types.hpp)
-
 # internal
 set(pang_int_hdr
-    )
+    include/pang/types.hpp;
+    include/pang/game.hpp)
 
 # -- Sources
 set(pang_src
-    src/pang/main.cpp)
+    src/pang/main.cpp;
+    src/pang/game.cpp)
 
 set(sfml_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/SFML-2.3.2)
 
 # -- Targets
 # --- executable
-add_exe(pang ${pang_src} ${pang_int_hdr} ${pang_hdr})
+add_exe(pang ${pang_src} ${pang_int_hdr})
 add_inc_dir(pang ${sfml_dir}/include)
 add_comp_def(pang PANG_MAJ=${pang_maj_ver})
 add_comp_def(pang PANG_MIN=${pang_min_ver})
