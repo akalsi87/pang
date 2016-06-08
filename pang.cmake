@@ -14,7 +14,7 @@ set(pang_lib_compat_ver
 
 # exports
 set(pang_hdr
-    include/pang/version.hpp)
+    include/pang/types.hpp)
 
 # internal
 set(pang_int_hdr
@@ -22,7 +22,7 @@ set(pang_int_hdr
 
 # -- Sources
 set(pang_src
-    src/pang/version.cpp)
+    src/pang/main.cpp)
 
 set(sfml_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/SFML-2.3.2)
 
