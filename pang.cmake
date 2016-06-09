@@ -31,10 +31,19 @@ add_inc_dir(pang ${sfml_dir}/include)
 add_comp_def(pang PANG_MAJ=${pang_maj_ver})
 add_comp_def(pang PANG_MIN=${pang_min_ver})
 add_comp_def(pang PANG_PAT=${pang_pat_ver})
-add_link_flag(pang -L${sfml_dir}/lib)
 link_libs(pang )
+add_link_flag(pang -Wl,-L${sfml_dir}/lib)
+add_link_lib(pang sfml-window)
+add_link_lib(pang sfml-system)
+add_link_lib(pang sfml-graphics)
 set_tgt_ver(pang ${pang_lib_ver} ${pang_lib_compat_ver})
 
+# --- move our deps into CMAKE_CURRENT_BINARY_DIR
+file(COPY ${sfml_dir}/lib/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 # -- Install!
+
+# --- install our deps
 install(DIRECTORY ${sfml_dir}/lib/ DESTINATION ${PROJ_INSTALL_LIB_DIR})
+# --- install self!
 install_tgt(pang)

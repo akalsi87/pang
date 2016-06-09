@@ -8,12 +8,23 @@
 
 #include "pang/types.hpp"
 
+#include <memory>
+
 namespace pang {
 
     class Game : NonCopyable
     {
       public:
+        Game();
+
+        ~Game();
+
         void start();
+
+      private:
+        class GameImpl;
+
+        std::unique_ptr<GameImpl> m_impl;
     };
 
 }//namespace pang
