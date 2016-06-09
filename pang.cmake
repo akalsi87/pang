@@ -23,11 +23,15 @@ add_link_lib(pang sfml-window)
 add_link_lib(pang sfml-system)
 add_link_lib(pang sfml-graphics)
 
+add_dependencies(check pang)
+
 # --- move our deps into CURRENT_BINARY_DIR so we find it at runtime
 file(COPY ${sfml_dir}/lib/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # -- Install!
 # --- install our deps
 install(DIRECTORY ${sfml_dir}/lib/ DESTINATION ${PROJ_INSTALL_LIB_DIR})
+install(DIRECTORY resources DESTINATION ${PROJ_INSTALL_BIN_DIR})
 # --- install self!
 install_tgt(pang)

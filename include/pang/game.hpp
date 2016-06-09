@@ -12,6 +12,8 @@
 
 namespace pang {
 
+    void setBinDir(const char* exeName);
+
     class Game : NonCopyable
     {
       public:
