@@ -58,7 +58,15 @@ namespace pang {
     Game::Game() : m_impl(new Game::GameImpl)
     {
         m_impl->state = GameState::UNINIT;
-        m_impl->window.create(sf::VideoMode(1024,768,32), "Pang!");
+
+        const char * const PANG = "Pang!";
+        auto allModes = sf::VideoMode::getFullscreenModes();
+
+        // if (allModes.size() > 0) {
+        //     m_impl->window.create(allModes[0], PANG, sf::Style::Fullscreen | sf::Style::Close);
+        // } else {
+            m_impl->window.create(sf::VideoMode::getDesktopMode(), PANG, sf::Style::Default);
+        // }
     }
 
     Game::~Game()
@@ -109,7 +117,7 @@ namespace pang {
       public:
         GameObject(sf::Window& window)
           : Sprite()
-          , m_windowSize(window.getSize())
+          , m_window(window)
           , m_texture()
         {
         }
@@ -117,13 +125,18 @@ namespace pang {
         bool loadFromFile(const std::string& s)
         {
             if (m_texture.loadFromFile(getPath(s))) {
-                auto wsize = m_windowSize;
-                auto tsize = m_texture.getSize();
                 this->setTexture(m_texture);
-                this->scale((float)wsize.x/tsize.x, (float)wsize.y/tsize.y);
+                this->refreshScaling();
                 return true;
             }
             return false;
+        }
+
+        void refreshScaling()
+        {
+            auto wsz = m_window.getSize();
+            auto tsz = m_texture.getSize();
+            this->setScale(static_cast<float>(wsz.x)/tsz.x, static_cast<float>(wsz.y)/tsz.y);
         }
 
         void setPosition(float, float)
@@ -134,7 +147,7 @@ namespace pang {
         {
         }
       private:
-        sf::Vector2u m_windowSize;
+        sf::Window& m_window;
         sf::Texture m_texture;
     };
 
@@ -146,16 +159,31 @@ namespace pang {
         Item paddleA;
         Item paddleB;
         Item ball;
+
+        sf::Vector2f posA;
+        sf::Vector2f posB;
+        sf::Vector2f posBall;
     };
 
     template <class drawable>
-    void setCenterTo(drawable& d, sf::Vector2f pos)
+    void setCenterPos(sf::Vector2u windowSize, drawable& d, sf::Vector2f pos)
     {
         auto tsize = d.getTexture()->getSize();
         sf::Vector2f tfsize(tsize);
-        tfsize.x = tfsize.x / 2;
-        tfsize.y = tfsize.y / 2;
-        d.setPosition(pos - tfsize);
+        tfsize.x = tfsize.x * 0.5;
+        tfsize.y = tfsize.y * 0.5;
+        sf::Vector2f posw(pos.x * windowSize.x, pos.y*windowSize.y);
+        d.setPosition(posw - tfsize);
+    }
+
+    static void updateGameplayItemState(sf::RenderWindow& window, GameplayData& game)
+    {
+        auto wsize = window.getSize();
+        sf::Vector2f wfsize(wsize);
+
+        setCenterPos(wsize, game.paddleA, game.posA);
+        setCenterPos(wsize, game.paddleB, game.posB);
+        setCenterPos(wsize, game.ball, game.posBall);
     }
 
     static bool setupGameplayData(sf::RenderWindow& window, GameplayData& game)
@@ -165,12 +193,11 @@ namespace pang {
                        game.ball.loadFromFile("resources/ball.png");
         if (!success) { return false; }
 
-        auto wsize = window.getSize();
-        sf::Vector2f wfsize(wsize);
+        game.posA = { 0.50f, 0.75f };
+        game.posB = { 0.50f, 0.25f };
+        game.posBall = { 0.50f, 0.50f };
 
-        setCenterTo(game.paddleA, { wfsize.x * 0.50f, wfsize.y * 0.75f });
-        setCenterTo(game.ball,    { wfsize.x * 0.50f, wfsize.y * 0.50f });
-        setCenterTo(game.paddleB, { wfsize.x * 0.50f, wfsize.y * 0.25f });
+        updateGameplayItemState(window, game);
 
         return true;
     }
@@ -196,6 +223,9 @@ namespace pang {
                     if (ev.type == sf::Event::Closed) {
                         data.state = GameState::EXITING;
                     }
+                    game.posA += { 0.0f, 0.01f };
+                    game.posB -= { 0.01f, 0.0f };
+                    updateGameplayItemState(window, game);
                     break;
                 case GameState::EXITING:
                     assert(false);
@@ -204,6 +234,7 @@ namespace pang {
                     break;
             }
         }
+        sf::sleep(sf::milliseconds(50));
     }
 
     static void showMainMenu(GameData& data)
@@ -217,10 +248,6 @@ namespace pang {
         assert(success);
         static_cast<void>(success);
 
-        window.clear();
-        window.draw(img);
-        window.display();
-
         enum Buttons
         {
             PLAY = 0,
@@ -228,17 +255,19 @@ namespace pang {
             kItems = 2
         };
 
-        static const sf::Rect<int> kLocations[kItems] =
-        {
-            { 0, 145, 1023, 235 },
-            { 0, 383, 1023, 177 }
+        static const sf::Rect<float> kLocations[kItems] = {
+            { 0.0f, 145.0f/768.0f, 1.0f, 235.0f/768.0f },
+            { 0.0f, 383.0f/768.0f, 1.0f, 177.0f/768.0f }
         };
 
-        auto handleClick =  [&data]
+        auto handleClick =  [&data, &window]
                             (int x, int y) -> bool
                             {
+                                auto wsize = window.getSize();
+                                auto fx = static_cast<float>(x)/wsize.x;
+                                auto fy = static_cast<float>(y)/wsize.y;
                                 for (int i = 0; i < kItems; ++i) {
-                                    if (kLocations[i].contains(x, y)) {
+                                    if (kLocations[i].contains(fx, fy)) {
                                         if (i == QUIT) {
                                             data.state = GameState::EXITING;
                                         }
@@ -250,6 +279,9 @@ namespace pang {
 
         sf::Event ev;
         while (true) {
+            window.clear();
+            window.draw(img);
+            window.display();
             if (window.waitEvent(ev)) {
                 switch (ev.type) {
                     case sf::Event::Closed:
@@ -261,6 +293,9 @@ namespace pang {
                                 goto show_menu_end;
                             }
                         }
+                        break;
+                    case sf::Event::Resized:
+                        img.refreshScaling();
                         break;
                     default:
                         break;
@@ -283,13 +318,12 @@ namespace pang {
         assert(success);
         static_cast<void>(success);
 
-        window.clear();
-        window.draw(img);
-        window.display();
-
         // wait for keypress | mouse button | exit
         sf::Event ev;
         while (true) {
+            window.clear();
+            window.draw(img);
+            window.display();
             if (window.waitEvent(ev)) {
                 switch (ev.type) {
                     case sf::Event::Closed:// fall through
@@ -297,6 +331,9 @@ namespace pang {
                     case sf::Event::KeyPressed:
                     case sf::Event::MouseButtonPressed:
                         goto show_splash_end;
+                    case sf::Event::Resized:
+                        img.refreshScaling();
+                        break;
                     default:
                         break;
                 }
