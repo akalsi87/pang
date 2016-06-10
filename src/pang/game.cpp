@@ -216,7 +216,7 @@ namespace pang {
         return true;
     }
 
-    static const size_t FRAME_RATE = 35;
+    static const size_t FRAME_RATE = 40;
     static const int MILLIS_PER_FRAME = (1000/FRAME_RATE); 
     static const sf::Time TIME_PER_FRAME = sf::milliseconds(MILLIS_PER_FRAME);
 
@@ -253,12 +253,15 @@ namespace pang {
                 game.posA += { 0.01f, 0.01f };
                 game.posB -= { 0.01f, 0.0f };
                 updateGameplayItemState(window, game);
+#ifndef NDEBUG
+                auto timeTakenUpdate = game.clock.getElapsedTime() - timeTakenEventHandling;
+#endif
                 displayGameplayState(window, game);
 
                 auto elapsed = game.clock.getElapsedTime();
 #ifndef NDEBUG
-                auto timeTakenDisplay = elapsed - timeTakenEventHandling;
-                std::cerr << "[loop] Max delay : " << TIME_PER_FRAME << " | Event handling: " << timeTakenEventHandling << " | Display : " << timeTakenDisplay << std::endl;
+                auto timeTakenDisplay = elapsed - timeTakenUpdate;
+                std::cerr << "[loop] Max " << TIME_PER_FRAME << ", Event " << timeTakenEventHandling << ", Update " << timeTakenUpdate << ", Display " << timeTakenDisplay << std::endl;
 #endif
                 if (elapsed < TIME_PER_FRAME) {
                     sf::sleep(TIME_PER_FRAME - elapsed);
