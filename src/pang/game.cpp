@@ -242,7 +242,9 @@ namespace pang {
             }
         }
 
+#ifndef NDEBUG
         auto timeTakenEventHandling = game.clock.getElapsedTime();
+#endif
 
         switch (data.state) {
             case GameState::PLAYING:
