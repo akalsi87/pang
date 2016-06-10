@@ -11,6 +11,8 @@
 #include <cassert>
 #include <cstdlib>
 
+#include <iostream>
+
 namespace pang {
 
     static std::string BIN_DIR;
@@ -163,6 +165,8 @@ namespace pang {
         sf::Vector2f posA;
         sf::Vector2f posB;
         sf::Vector2f posBall;
+
+        sf::Clock clock;
     };
 
     template <class drawable>
@@ -186,6 +190,15 @@ namespace pang {
         setCenterPos(wsize, game.ball, game.posBall);
     }
 
+    static void displayGameplayState(sf::RenderWindow& window, GameplayData& game)
+    {
+        window.clear();
+        window.draw(game.paddleA);
+        window.draw(game.paddleB);
+        window.draw(game.ball);
+        window.display();
+    }
+
     static bool setupGameplayData(sf::RenderWindow& window, GameplayData& game)
     {
         bool success = game.paddleA.loadFromFile("resources/paddle.png") &&
@@ -198,43 +211,64 @@ namespace pang {
         game.posBall = { 0.50f, 0.50f };
 
         updateGameplayItemState(window, game);
+        displayGameplayState(window, game);
 
         return true;
     }
 
-    static void displayGameplayState(sf::RenderWindow& window, GameplayData& game)
+    static const size_t FRAME_RATE = 35;
+    static const int MILLIS_PER_FRAME = (1000/FRAME_RATE); 
+    static const sf::Time TIME_PER_FRAME = sf::milliseconds(MILLIS_PER_FRAME);
+
+    std::ostream& operator<<(std::ostream& s, const sf::Time& t)
     {
-        window.clear();
-        window.draw(game.paddleA);
-        window.draw(game.paddleB);
-        window.draw(game.ball);
-        window.display();
+        s << t.asMilliseconds() << "ms";
+        return s;
     }
 
     static void gameIteration(GameData& data, GameplayData& game)
     {
         assert(data.state == GameState::PLAYING);
+        
         auto& window = data.window;
+        
+        game.clock.restart();
+
         sf::Event ev;
-        if (window.waitEvent(ev)) {
-            switch (data.state) {
-                case GameState::PLAYING:
-                    displayGameplayState(window, game);
-                    if (ev.type == sf::Event::Closed) {
-                        data.state = GameState::EXITING;
-                    }
-                    game.posA += { 0.0f, 0.01f };
-                    game.posB -= { 0.01f, 0.0f };
-                    updateGameplayItemState(window, game);
-                    break;
-                case GameState::EXITING:
-                    assert(false);
-                    break;
-                default:
-                    break;
+        if (window.pollEvent(ev)) {
+            if (ev.type == sf::Event::Closed) {
+                data.state = GameState::EXITING;
+                return;
             }
         }
-        sf::sleep(sf::milliseconds(50));
+
+        auto timeTakenEventHandling = game.clock.getElapsedTime();
+
+        switch (data.state) {
+            case GameState::PLAYING:
+            {
+
+                game.posA += { 0.01f, 0.01f };
+                game.posB -= { 0.01f, 0.0f };
+                updateGameplayItemState(window, game);
+                displayGameplayState(window, game);
+
+                auto elapsed = game.clock.getElapsedTime();
+#ifndef NDEBUG
+                auto timeTakenDisplay = elapsed - timeTakenEventHandling;
+                std::cerr << "[loop] Max delay : " << TIME_PER_FRAME << " | Event handling: " << timeTakenEventHandling << " | Display : " << timeTakenDisplay << std::endl;
+#endif
+                if (elapsed < TIME_PER_FRAME) {
+                    sf::sleep(TIME_PER_FRAME - elapsed);
+                }
+                break;
+            }
+            case GameState::EXITING:
+                assert(false);
+                break;
+            default:
+                break;
+        }
     }
 
     static void showMainMenu(GameData& data)
